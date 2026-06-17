@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from database import engine, Base, SessionLocal
 from models import Usuario
-from schemas import UsuarioCreate, UsuarioResponse
-from security import gerar_hash
+from schemas import UsuarioCreate, UsuarioResponse, LoginRequest
+from security import gerar_hash, verificar_senha
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -49,3 +49,29 @@ def listar_usuarios_id(id: int):
     usuarios = db.query(Usuario).filter(Usuario.id == id).first()
     db.close()
     return usuarios
+
+@app.post("/login")
+def login(dados: LoginRequest):
+    db = SessionLocal()
+    usuario = db.query(Usuario).filter(
+        Usuario.email == dados.email
+    ).first()
+    db.close()
+
+    if not usuario:
+        return {"erro": "Usuário não encontrado"}
+    
+    if not usuario.ativo:
+        return {"erro": "Usuário bloqueado"}
+
+    if not verificar_senha(
+        dados.senha,
+        usuario.senha_hash
+    ):
+        return {"erro": "Senha incorreta"}
+    
+    return{
+        "mensagem": "Login realizado com sucesso",
+        "usuario": usuario.nome,
+        "tipo": usuario.tipo
+    }

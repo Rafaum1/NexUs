@@ -14,3 +14,7 @@ class UsuarioResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class LoginRequest(BaseModel):
+    email: str
+    senha: str
